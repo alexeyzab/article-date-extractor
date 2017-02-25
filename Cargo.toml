@@ -1,0 +1,6 @@
+[package]
+name = "article-date-extractor"
+version = "0.1.0"
+authors = ["Alexey Zabelin <zabelin.alex@gmail.com>"]
+
+[dependencies]
