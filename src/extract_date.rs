@@ -1,5 +1,10 @@
 use regex::Regex;
 use chrono::{NaiveDate, ParseError};
+use reqwest;
+use reqwest::Response;
+use std::io::Read;
+use select::document::Document;
+use select::predicate::{Name};
 
 // Some formats borrowed from https://github.com/amir/article-date-extractor
 static FMTS: &'static [&str] = &["/%Y/%m/%d/", "/%Y/%d/%m/", "%Y-%m-%d", "%B %e, %Y", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S%Z", "%B %k, %Y, %H:%M %p", "%Y-%m-%d %H:%M:%S.000000"];
@@ -33,11 +38,63 @@ fn extract_from_url(url: &str) -> Result<NaiveDate, ParseError> {
     }
 }
 
+// Attempt to extract the date from meta tags
+fn extract_from_meta<'a>(parsed_html: &'a Document) -> Result<NaiveDate, ParseError> {
+    let mut meta_date = "";
+
+    'outer: for meta in parsed_html.find(Name("meta")) {
+        let meta_name     = meta.attr("name").unwrap_or("").to_lowercase();
+        let item_prop     = meta.attr("itemprop").unwrap_or("").to_lowercase();
+        let http_equiv    = meta.attr("http-equiv").unwrap_or("").to_lowercase();
+        let meta_property = meta.attr("property").unwrap_or("").to_lowercase();
+
+        match meta_name.as_ref() {
+            "pubdate"               | "publishdate"                  | "timestamp"       |
+            "dc.date.issued"        | "date"                         | "sailthru.date"   |
+            "article.published"     | "published-date"               | "article.created" |
+            "article_date_original" | "cxenseparse:recs:publishtime" | "date_published"  => { meta_date = meta.attr("content").unwrap().trim();
+                                                                                              break 'outer; },
+            _ => meta_date = "",
+        }
+
+        match item_prop.as_ref() {
+            "datepublished" | "datecreated" => { meta_date = meta.attr("content").unwrap().trim();
+                                                 break 'outer; },
+            _ => meta_date = "",
+        }
+
+        match http_equiv.as_ref() {
+            "date" => meta_date = { meta.attr("content").unwrap().trim();
+                                    break 'outer; },
+            _ => meta_date = "",
+        }
+
+        match meta_property.as_ref() {
+            "article:published_time" | "bt:pubdate" => meta_date = meta.attr("content").unwrap().trim(),
+            "og:image"                              => { let url = meta.attr("content").unwrap().trim();
+                                                         let possible_date = extract_from_url(url);
+                                                         if possible_date.is_ok() {
+                                                           return possible_date
+                                                         } },
+            _ => meta_date = "",
+        }
+
+
+    }
+    parse_date(meta_date)
+}
+// Unit tests
 #[cfg(test)]
 mod test {
     use super::extract_from_url;
     use super::parse_date;
+    use super::extract_from_meta;
     use chrono::{NaiveDate};
+    use reqwest;
+    use std::string::String;
+    use std::io::Read;
+    use select::document::Document;
+
     #[test]
     fn parsing_date() {
         assert_eq!(parse_date("/2015/11/30/"), Ok(NaiveDate::from_ymd(2015,11,30)));
@@ -54,8 +111,12 @@ mod test {
     }
     
     #[test]
-    fn parsing() {
-        assert_eq!(parse_date("/2015/11/30/"), Ok(NaiveDate::from_ymd(2015,11,30)));
-        assert_eq!(parse_date("/2015/30/11/"), Ok(NaiveDate::from_ymd(2015,11,30)));
+    fn extracting_from_meta() {
+        let mut response = reqwest::get("https://techcrunch.com/2015/11/30/atlassian-share-price/").unwrap();
+        let mut body = String::new();
+        response.read_to_string(&mut body).unwrap();
+        let document = Document::from(body.as_str());
+
+        assert_eq!(Ok(NaiveDate::from_ymd(2015,11,30)), extract_from_meta(&document));
     }
 }
