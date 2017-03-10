@@ -4,7 +4,8 @@ use reqwest;
 use reqwest::Response;
 use std::io::Read;
 use select::document::Document;
-use select::predicate::{Name};
+use select::predicate::{Name, Attr};
+use rustc_serialize::json::Json;
 
 // Some formats borrowed from https://github.com/amir/article-date-extractor
 static FMTS: &'static [&str] = &["/%Y/%m/%d/", "/%Y/%d/%m/", "%Y-%m-%d", "%B %e, %Y", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S%Z", "%B %k, %Y, %H:%M %p", "%Y-%m-%d %H:%M:%S.000000"];
@@ -36,6 +37,21 @@ fn extract_from_url(url: &str) -> Result<NaiveDate, ParseError> {
         Some(v) => parse_date(v.as_str()),
         None => parse_date(""),
     }
+}
+
+fn extract_from_ldjson<'a>(html: &'a Document) -> Result<NaiveDate, ParseError> {
+    let mut json_date = String::new();
+    let json = html.find(Attr("type", "application/ld+json")).next().unwrap().text();
+
+    let decoded_json = Json::from_str(json.as_str()).unwrap();
+
+    if let Some(date_published) = decoded_json.search("datePublished") {
+        json_date = date_published.as_string().unwrap_or("").to_string();
+    } else if let Some(date_created) = decoded_json.search("dateCreated") {
+        json_date = date_created.as_string().unwrap_or("").to_string();
+    }
+
+    parse_date(json_date.as_str())
 }
 
 // Attempt to extract the date from meta tags
@@ -89,6 +105,7 @@ mod test {
     use super::extract_from_url;
     use super::parse_date;
     use super::extract_from_meta;
+    use super::extract_from_ldjson;
     use chrono::{NaiveDate};
     use reqwest;
     use std::string::String;
@@ -109,7 +126,7 @@ mod test {
         let link = "";
         assert_eq!(extract_from_url(link), parse_date(""));
     }
-    
+
     #[test]
     fn extracting_from_meta() {
         let mut response = reqwest::get("https://techcrunch.com/2015/11/30/atlassian-share-price/").unwrap();
@@ -118,5 +135,18 @@ mod test {
         let document = Document::from(body.as_str());
 
         assert_eq!(Ok(NaiveDate::from_ymd(2015,11,30)), extract_from_meta(&document));
+    }
+
+    #[test]
+    fn extracting_from_ldjson() {
+        let mut response = reqwest::get("https://techcrunch.com/2015/11/30/atlassian-share-price/").unwrap();
+        let mut body = String::new();
+        response.read_to_string(&mut body).unwrap();
+        let document = Document::from(body.as_str());
+
+        assert_eq!(Ok(NaiveDate::from_ymd(2015,12,01)), extract_from_ldjson(&document));
+        // println!("{:?}", extract_from_ldjson(&document));
+        // println!("{:?}", parse_date("2015-12-01T07:50:48Z"));
+        // println!("{:?}", parse_date(extract_from_ldjson(&document).trim()));
     }
 }

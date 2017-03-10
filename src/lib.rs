@@ -3,4 +3,5 @@ extern crate regex;
 extern crate chrono;
 extern crate reqwest;
 extern crate select;
-pub mod parse;
+extern crate rustc_serialize;
+pub mod extract_date;
