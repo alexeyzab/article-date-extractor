@@ -55,8 +55,8 @@ fn extract_from_ldjson<'a>(html: &'a Document) -> Result<NaiveDate, ParseError> 
 }
 
 // Attempt to extract the date from meta tags
-    let mut meta_date = "";
 fn extract_from_meta<'a>(html: &'a Document) -> Result<NaiveDate, ParseError> {
+    let mut meta_date = String::new();
 
     'outer: for meta in html.find(Name("meta")) {
         let meta_name     = meta.attr("name").unwrap_or("").to_lowercase();
@@ -68,36 +68,37 @@ fn extract_from_meta<'a>(html: &'a Document) -> Result<NaiveDate, ParseError> {
             "pubdate"               | "publishdate"                  | "timestamp"       |
             "dc.date.issued"        | "date"                         | "sailthru.date"   |
             "article.published"     | "published-date"               | "article.created" |
-            "article_date_original" | "cxenseparse:recs:publishtime" | "date_published"  => { meta_date = meta.attr("content").unwrap().trim();
+            "article_date_original" | "cxenseparse:recs:publishtime" | "date_published"  => { meta_date = meta.attr("content").unwrap().trim().to_string();
                                                                                               break 'outer; },
-            _ => meta_date = "",
+            _ => meta_date = String::new(),
         }
 
         match item_prop.as_ref() {
-            "datepublished" | "datecreated" => { meta_date = meta.attr("content").unwrap().trim();
+            "datepublished" | "datecreated" => { meta_date = meta.attr("content").unwrap().trim().to_string();
                                                  break 'outer; },
-            _ => meta_date = "",
+            _ => meta_date = String::new(),
         }
 
         match http_equiv.as_ref() {
-            "date" => meta_date = { meta.attr("content").unwrap().trim();
-                                    break 'outer; },
-            _ => meta_date = "",
+            "date" =>  { meta_date = meta.attr("content").unwrap().trim().to_string();
+                         break 'outer; },
+            _ => meta_date = String::new(),
         }
 
         match meta_property.as_ref() {
-            "article:published_time" | "bt:pubdate" => meta_date = meta.attr("content").unwrap().trim(),
+            "article:published_time" | "bt:pubdate" => { meta_date = meta.attr("content").unwrap().trim().to_string();
+                                                         break 'outer; },
             "og:image"                              => { let url = meta.attr("content").unwrap().trim();
                                                          let possible_date = extract_from_url(url);
                                                          if possible_date.is_ok() {
                                                            return possible_date
                                                          } },
-            _ => meta_date = "",
+            _ => meta_date = String::new(),
         }
 
 
     }
-    parse_date(meta_date)
+    parse_date(meta_date.as_str())
 }
 // Unit tests
 #[cfg(test)]
