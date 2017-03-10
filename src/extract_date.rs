@@ -55,10 +55,10 @@ fn extract_from_ldjson<'a>(html: &'a Document) -> Result<NaiveDate, ParseError> 
 }
 
 // Attempt to extract the date from meta tags
-fn extract_from_meta<'a>(parsed_html: &'a Document) -> Result<NaiveDate, ParseError> {
     let mut meta_date = "";
+fn extract_from_meta<'a>(html: &'a Document) -> Result<NaiveDate, ParseError> {
 
-    'outer: for meta in parsed_html.find(Name("meta")) {
+    'outer: for meta in html.find(Name("meta")) {
         let meta_name     = meta.attr("name").unwrap_or("").to_lowercase();
         let item_prop     = meta.attr("itemprop").unwrap_or("").to_lowercase();
         let http_equiv    = meta.attr("http-equiv").unwrap_or("").to_lowercase();
