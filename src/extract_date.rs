@@ -8,7 +8,7 @@ use select::predicate::{Name, Attr};
 use rustc_serialize::json::Json;
 
 // Some formats borrowed from https://github.com/amir/article-date-extractor
-static FMTS: &'static [&str] = &["/%Y/%m/%d/", "/%Y/%d/%m/", "%Y-%m-%d", "%B %e, %Y", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S%Z", "%B %k, %Y, %H:%M %p", "%Y-%m-%d %H:%M:%S.000000"];
+static FMTS: &'static [&str] = &["/%Y/%m/%d/", "/%Y/%d/%m/", "%Y-%m-%d", "%B %e, %Y", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%SZ", "%B %k, %Y, %H:%M %p", "%Y-%m-%d %H:%M:%S.000000"];
 
 // Parse the date, trying out each format
 pub fn parse_date(input: &str) -> Result<NaiveDate, ParseError> {
