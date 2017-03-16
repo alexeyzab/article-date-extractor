@@ -147,7 +147,41 @@ fn extract_from_html_tag<'a>(html: &'a Document) -> Option<String> {
 
     date
 }
+
+// Try to extract the date by using each function one by one
+pub fn extract_article_published_date(link: &str, html: Option<String>) -> Result<NaiveDate> {
+    let mut body: String = String::new();
+    let mut parsed_body: Option<Document> = None;
+
+    if let Some(v) = extract_from_url(link) {
+        return parse_date(v.as_str())
+    }
+
+    if html.is_none() {
+        if let Ok(mut response) = reqwest::get(link) {
+            response.read_to_string(&mut body).unwrap();
+            let doc = Document::from(body.as_str());
+            parsed_body = Some(doc);
+        } else {
+            return Err("Couldn't open the link".into())
+        }
+    } else {
+        parsed_body = Some(Document::from(html.unwrap().as_str()))
+    }
+
+    if let Some(v) = extract_from_url(link) {
+        return parse_date(v.as_str())
+    } else if let Some(v) = extract_from_ldjson(parsed_body.as_ref().unwrap()) {
+        return parse_date(v.as_str())
+    } else if let Some(v) = extract_from_meta(parsed_body.as_ref().unwrap()) {
+        return parse_date(v.as_str())
+    } else if let Some(v) = extract_from_html_tag(parsed_body.as_ref().unwrap()) {
+        return parse_date(v.as_str())
+    } else {
+        return Err("Couldn't find the date to parse".into())
+    }
 }
+
 // Unit tests
 #[cfg(test)]
 mod test {
