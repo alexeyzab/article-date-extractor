@@ -6,6 +6,7 @@ use std::io::Read;
 use select::document::Document;
 use select::predicate::{Name, Attr};
 use rustc_serialize::json::Json;
+use errors::*;
 
 // Some formats borrowed from https://github.com/amir/article-date-extractor
 static FMTS: &'static [&str] = &["/%Y/%m/%d/", "/%Y/%d/%m/", "%Y-%m-%d", "%B %e, %Y", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%SZ", "%B %k, %Y, %H:%M %p", "%Y-%m-%d %H:%M:%S.000000"];
