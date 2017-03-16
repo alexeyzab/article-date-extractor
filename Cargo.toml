@@ -5,9 +5,8 @@ authors = ["Alexey Zabelin <zabelin.alex@gmail.com>"]
 
 [dependencies]
 regex = "0.2"
-lazy_static= "0.2.2"
+lazy_static = "0.2.2"
 chrono = "0.3"
-# hyper = "0.10"
 reqwest = "0.4.0"
 select = { git = "https://github.com/utkarshkukreti/select.rs" }
 rustc-serialize = "0.3"
