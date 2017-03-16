@@ -42,24 +42,32 @@ fn extract_from_url(url: &str) -> Option<String> {
     date
 }
 
-fn extract_from_ldjson<'a>(html: &'a Document) -> Result<NaiveDate, ParseError> {
-    let mut json_date = String::new();
-    let json = html.find(Attr("type", "application/ld+json")).next().unwrap().text();
-
-    let decoded_json = Json::from_str(json.as_str()).unwrap();
-
-    if let Some(date_published) = decoded_json.search("datePublished") {
-        json_date = date_published.as_string().unwrap_or("").to_string();
-    } else if let Some(date_created) = decoded_json.search("dateCreated") {
-        json_date = date_created.as_string().unwrap_or("").to_string();
+// Extract date from JSON-LD
+fn extract_from_ldjson<'a>(html: &'a Document) -> Option<String> {
+    let mut json_date: Option<String> = None;
+    let mut ldjson = String::new();
+    if let Some(ldj) = html.find(Attr("type", "application/ld+json")).next() {
+        ldjson = ldj.text();
     }
 
-    parse_date(json_date.as_str())
+    let decoded_ldjson = Json::from_str(ldjson.as_str()).unwrap();
+
+    if let Some(date_published) = decoded_ldjson.search("datePublished") {
+        if let Some(date) = date_published.as_string() {
+            json_date = Some(date.to_string())
+        }
+    } else if let Some(date_created) = decoded_ldjson.search("dateCreated") {
+        if let Some(date) = date_created.as_string() {
+            json_date = Some(date.to_string())
+        }
+    }
+
+    json_date
 }
 
-// Attempt to extract the date from meta tags
-fn extract_from_meta<'a>(html: &'a Document) -> Result<NaiveDate, ParseError> {
-    let mut meta_date = String::new();
+// Extract date from meta tags
+fn extract_from_meta<'a>(html: &'a Document) -> Option<String> {
+    let mut meta_date: Option<String> = None;
 
     'outer: for meta in html.find(Name("meta")) {
         let meta_name     = meta.attr("name").unwrap_or("").to_lowercase();
@@ -71,37 +79,47 @@ fn extract_from_meta<'a>(html: &'a Document) -> Result<NaiveDate, ParseError> {
             "pubdate"               | "publishdate"                  | "timestamp"       |
             "dc.date.issued"        | "date"                         | "sailthru.date"   |
             "article.published"     | "published-date"               | "article.created" |
-            "article_date_original" | "cxenseparse:recs:publishtime" | "date_published"  => { meta_date = meta.attr("content").unwrap().trim().to_string();
+            "article_date_original" | "cxenseparse:recs:publishtime" | "date_published"  => { if let Some(ct) = meta.attr("content") {
+                                                                                                  meta_date = Some(ct.trim().to_string())
+                                                                                              }
                                                                                               break 'outer; },
-            _ => meta_date = String::new(),
+            _ => {},
         }
 
         match item_prop.as_ref() {
-            "datepublished" | "datecreated" => { meta_date = meta.attr("content").unwrap().trim().to_string();
+            "datepublished" | "datecreated" => { if let Some(ct) = meta.attr("content") {
+                                                   meta_date = Some(ct.trim().to_string())
+                                                 }
                                                  break 'outer; },
-            _ => meta_date = String::new(),
+            _ => {},
         }
 
         match http_equiv.as_ref() {
-            "date" =>  { meta_date = meta.attr("content").unwrap().trim().to_string();
+            "date" =>  { if let Some(ct) = meta.attr("content") {
+                           meta_date = Some(ct.trim().to_string())
+                         }
                          break 'outer; },
-            _ => meta_date = String::new(),
+            _ => {},
         }
 
         match meta_property.as_ref() {
-            "article:published_time" | "bt:pubdate" => { meta_date = meta.attr("content").unwrap().trim().to_string();
+            "article:published_time" | "bt:pubdate" => { if let Some(ct) = meta.attr("content") {
+                                                           meta_date = Some(ct.trim().to_string())
+                                                         }
                                                          break 'outer; },
-            "og:image"                              => { let url = meta.attr("content").unwrap().trim();
-                                                         let possible_date = extract_from_url(url);
-                                                         if possible_date.is_ok() {
-                                                           return possible_date
-                                                         } },
-            _ => meta_date = String::new(),
+            "og:image"                              => { if let Some(url) = meta.attr("content") {
+                                                           meta_date = extract_from_url(url.trim())
+                                                         }
+                                                         break 'outer; },
+
+            _ => {},
         }
 
 
     }
-    parse_date(meta_date.as_str())
+
+    meta_date
+}
 }
 // Unit tests
 #[cfg(test)]
