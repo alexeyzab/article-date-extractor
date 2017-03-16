@@ -1,7 +1,6 @@
 use regex::Regex;
-use chrono::{NaiveDate, ParseError};
+use chrono::NaiveDate;
 use reqwest;
-use reqwest::Response;
 use std::io::Read;
 use select::document::Document;
 use select::predicate::{Name, Attr};
@@ -189,7 +188,9 @@ mod test {
     use super::parse_date;
     use super::extract_from_meta;
     use super::extract_from_ldjson;
-    use chrono::{NaiveDate};
+    use super::extract_from_html_tag;
+    use super::extract_article_published_date;
+    use chrono::NaiveDate;
     use reqwest;
     use std::string::String;
     use std::io::Read;
@@ -197,17 +198,19 @@ mod test {
 
     #[test]
     fn parsing_date() {
-        assert_eq!(parse_date("/2015/11/30/"), Ok(NaiveDate::from_ymd(2015,11,30)));
-        assert_eq!(parse_date("/2015/30/11/"), Ok(NaiveDate::from_ymd(2015,11,30)));
+        assert_eq!(NaiveDate::from_ymd(2015,11,30), parse_date("/2015/11/30/").unwrap());
+        assert_eq!(NaiveDate::from_ymd(2015,11,30), parse_date("/2015/30/11/").unwrap());
+
+        assert!(parse_date("bad_format").is_err());
     }
 
     #[test]
     fn extracting_from_url() {
         let link = "http://edition.cnn.com/2015/11/28/opinions/sutter-cop21-paris-preview-two-degrees/index.html";
-        assert_eq!(extract_from_url(link), parse_date("/2015/11/28/"));
+        assert_eq!(Some("/2015/11/28/".to_string()), extract_from_url(link));
 
         let link = "";
-        assert_eq!(extract_from_url(link), parse_date(""));
+        assert_eq!(None, extract_from_url(link));
     }
 
     #[test]
@@ -217,7 +220,7 @@ mod test {
         response.read_to_string(&mut body).unwrap();
         let document = Document::from(body.as_str());
 
-        assert_eq!(Ok(NaiveDate::from_ymd(2015,11,30)), extract_from_meta(&document));
+        assert_eq!(Some(("2015-11-30 23:50:48".to_string())), extract_from_meta(&document));
     }
 
     #[test]
@@ -227,9 +230,29 @@ mod test {
         response.read_to_string(&mut body).unwrap();
         let document = Document::from(body.as_str());
 
-        assert_eq!(Ok(NaiveDate::from_ymd(2015,12,01)), extract_from_ldjson(&document));
-        // println!("{:?}", extract_from_ldjson(&document));
-        // println!("{:?}", parse_date("2015-12-01T07:50:48Z"));
-        // println!("{:?}", parse_date(extract_from_ldjson(&document).trim()));
+        assert_eq!(Some("2015-12-01T07:50:48Z".to_string()), extract_from_ldjson(&document));
+    }
+
+    #[test]
+    fn extracting_from_html_tag() {
+        let mut response = reqwest::get("http://edition.cnn.com/2015/11/28/opinions/sutter-cop21-paris-preview-two-degrees/index.html").unwrap();
+        let mut body = String::new();
+        response.read_to_string(&mut body).unwrap();
+        let document = Document::from(body.as_str());
+
+        assert_eq!(Some("2015-11-29T00:44:59Z".to_string()), extract_from_html_tag(&document));
+    }
+
+    #[test]
+    fn extracting_article_published_date() {
+        let link = "http://edition.cnn.com/2015/11/28/opinions/sutter-cop21-paris-preview-two-degrees/index.html";
+        let mut response = reqwest::get("http://edition.cnn.com/2015/11/28/opinions/sutter-cop21-paris-preview-two-degrees/index.html").unwrap();
+        let mut body = String::new();
+        response.read_to_string(&mut body).unwrap();
+
+        assert_eq!(NaiveDate::from_ymd(2015,11,28), extract_article_published_date(&link, None).unwrap());
+        assert_eq!(NaiveDate::from_ymd(2015,11,28), extract_article_published_date(&link, Some(body)).unwrap());
+
+        assert!((extract_article_published_date("", None)).is_err());
     }
 }
