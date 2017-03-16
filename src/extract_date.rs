@@ -120,6 +120,33 @@ fn extract_from_meta<'a>(html: &'a Document) -> Option<String> {
 
     meta_date
 }
+
+// Extract from html tags
+fn extract_from_html_tag<'a>(html: &'a Document) -> Option<String> {
+    let mut date: Option<String> = None;
+
+    for time in html.find(Name("time")) {
+        if let Some(dt) = time.attr("datetime") {
+            date = Some(dt.to_string())
+        } else if let Some("timestamp") = time.attr("class") {
+            date = Some(time.text())
+        }
+    }
+
+    if date.is_none() {
+        for tag in html.find(Name("meta")) {
+            if let Some("datePublished") = tag.attr("itemprop") {
+                if let Some(v) = tag.attr("content") {
+                    date = Some(v.to_string())
+                } else {
+                    date = Some(tag.text())
+                }
+            }
+        }
+    }
+
+    date
+}
 }
 // Unit tests
 #[cfg(test)]
