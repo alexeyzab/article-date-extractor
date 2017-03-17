@@ -47,7 +47,12 @@ fn extract_from_ldjson<'a>(html: &'a Document) -> Option<String> {
         ldjson = ldj.text();
     }
 
-    let decoded_ldjson = Json::from_str(ldjson.as_str()).unwrap();
+    let mut decoded_ldjson = Json::from_str("{}").unwrap();
+
+    match Json::from_str(ldjson.as_str()) {
+        Ok(v) => decoded_ldjson = v,
+        _ => return None,
+    }
 
     if let Some(date_published) = decoded_ldjson.search("datePublished") {
         if let Some(date) = date_published.as_string() {
