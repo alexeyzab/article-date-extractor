@@ -229,10 +229,8 @@ mod test {
     use super::extract_from_meta;
     use super::extract_from_ldjson;
     use super::extract_from_html_tag;
-    use super::extract_article_published_date;
     use chrono::NaiveDate;
     use reqwest;
-    use std::string::String;
     use std::io::Read;
     use select::document::Document;
 
@@ -254,16 +252,6 @@ mod test {
     }
 
     #[test]
-    fn extracting_from_meta() {
-        let mut response = reqwest::get("https://techcrunch.com/2015/11/30/atlassian-share-price/").unwrap();
-        let mut body = String::new();
-        response.read_to_string(&mut body).unwrap();
-        let document = Document::from(body.as_str());
-
-        assert_eq!(Some(("2015-11-30 23:50:48".to_string())), extract_from_meta(&document));
-    }
-
-    #[test]
     fn extracting_from_ldjson() {
         let mut response = reqwest::get("https://techcrunch.com/2015/11/30/atlassian-share-price/").unwrap();
         let mut body = String::new();
@@ -274,25 +262,22 @@ mod test {
     }
 
     #[test]
-    fn extracting_from_html_tag() {
-        let mut response = reqwest::get("http://edition.cnn.com/2015/11/28/opinions/sutter-cop21-paris-preview-two-degrees/index.html").unwrap();
+    fn extracting_from_meta() {
+        let mut response = reqwest::get("https://techcrunch.com/2015/11/30/atlassian-share-price/").unwrap();
         let mut body = String::new();
         response.read_to_string(&mut body).unwrap();
         let document = Document::from(body.as_str());
 
-        assert_eq!(Some("2015-11-29T00:44:59Z".to_string()), extract_from_html_tag(&document));
+        assert_eq!(Some(("2015-11-30 23:50:48".to_string())), extract_from_meta(&document));
     }
 
     #[test]
-    fn extracting_article_published_date() {
-        let link = "http://edition.cnn.com/2015/11/28/opinions/sutter-cop21-paris-preview-two-degrees/index.html";
-        let mut response = reqwest::get("http://edition.cnn.com/2015/11/28/opinions/sutter-cop21-paris-preview-two-degrees/index.html").unwrap();
+    fn extracting_from_html_tag() {
+        let mut response = reqwest::get("https://research.googleblog.com/2017/03/announcing-guetzli-new-open-source-jpeg.html").unwrap();
         let mut body = String::new();
         response.read_to_string(&mut body).unwrap();
+        let document = Document::from(body.as_str());
 
-        assert_eq!(NaiveDate::from_ymd(2015,11,28), extract_article_published_date(&link, None).unwrap());
-        assert_eq!(NaiveDate::from_ymd(2015,11,28), extract_article_published_date(&link, Some(body)).unwrap());
-
-        assert!((extract_article_published_date("", None)).is_err());
+        assert_eq!(Some("Thursday, March 16, 2017".to_string()), extract_from_html_tag(&document));
     }
 }
