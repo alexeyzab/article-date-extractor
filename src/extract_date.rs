@@ -125,24 +125,61 @@ fn extract_from_meta<'a>(html: &'a Document) -> Option<String> {
 
 // Extract from html tags
 fn extract_from_html_tag<'a>(html: &'a Document) -> Option<String> {
+    lazy_static! {
+        static ref TAG_RE: Regex = Regex::new(r"(?i)publishdate|pubdate|timestamp|article_date|articledate|date").unwrap();
+    }
+
     let mut date: Option<String> = None;
 
-    for time in html.find(Name("time")) {
+    'initial: for time in html.find(Name("time")) {
         if let Some(dt) = time.attr("datetime") {
-            date = Some(dt.to_string())
+            { date = Some(dt.to_string());
+              break 'initial; }
         } else if let Some("timestamp") = time.attr("class") {
-            date = Some(time.text())
+            { date = Some(time.text().trim_matches('\n').to_string());
+              break 'initial; }
         }
     }
 
     if date.is_none() {
-        for tag in html.find(Name("meta")) {
+        'outer: for tag in html.find(Name("span")) {
             if let Some("datePublished") = tag.attr("itemprop") {
                 if let Some(v) = tag.attr("content") {
-                    date = Some(v.to_string())
-                } else {
-                    date = Some(tag.text())
+                    { date = Some(v.to_string());
+                      break 'outer; }
+                } else if tag.text() != "" {
+                    { date = Some(tag.text().trim_matches('\n').to_string());
+                      break 'outer; }
                 }
+            }
+        }
+    }
+
+    // These next three loops are due to the lack of `find_all` method for select.rs library
+    // See also: https://github.com/Webhose/article-date-extractor/blob/master/articleDateExtractor/__init__.py#L191
+    if date.is_none() {
+        'outer_first: for tag in html.find(Name("span")) {
+            if TAG_RE.is_match(tag.attr("class").unwrap_or("")) {
+                { date = Some(tag.text().trim_matches('\n').to_string());
+                  break 'outer_first; }
+            }
+        }
+    }
+
+    if date.is_none() {
+        'outer_second: for tag in html.find(Name("p")) {
+            if TAG_RE.is_match(tag.attr("class").unwrap_or("")) {
+                { date = Some(tag.text().trim_matches('\n').to_string());
+                  break 'outer_second; }
+            }
+        }
+    }
+
+    if date.is_none() {
+        'outer_third: for tag in html.find(Name("div")) {
+            if TAG_RE.is_match(tag.attr("class").unwrap_or("")) {
+                { date = Some(tag.text().trim_matches('\n').to_string());
+                  break 'outer_third; }
             }
         }
     }
