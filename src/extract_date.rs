@@ -13,7 +13,7 @@ static FMTS: &'static [&str] = &["%A, %B %e, %Y", "%Y-%m-%dT%H:%M:%S%:z", "/%Y/%
 // Use lazy_static to ensure we only compile the regex once
 lazy_static! {
     // Regex by Newspaper3k  - https://github.com/codelucas/newspaper/blob/master/newspaper/urls.py
-    static ref RE: Regex = Regex::new(r"([\./\-_]{0,1}(19|20)\d{2})[\./\-_]{0,1}(([0-3]{0,1}[0-9][\./\-_])|(\w{3,5}[\./\-_]))([0-3]{0,1}[0-9][\./\-]{0,1})?").unwrap();
+    static ref RE: Regex = Regex::new(r"([\./\-_]{0,1}(19|20)\d{2})[\./\-_]{0,1}(([0-3]{0,1}[0-9][\./\-_])|(\w{3,5}[\./\-_]))([0-3]{0,1}[0-9][\./\-]{0,1})").unwrap();
 }
 
 // Parse the date, trying out each format
