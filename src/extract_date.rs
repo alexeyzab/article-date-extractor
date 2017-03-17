@@ -32,13 +32,11 @@ fn parse_date(input: &str) -> Result<NaiveDate> {
 
 // Extract date from a URL
 fn extract_from_url(url: &str) -> Option<String> {
-    let mut date: Option<String> = None;
-
     if let Some(val) = RE.find(url) {
-        date = Some(val.as_str().to_string());
+        return Some(val.as_str().to_string())
+    } else {
+        return None
     }
-
-    date
 }
 
 // Extract date from JSON-LD
