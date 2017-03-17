@@ -47,18 +47,18 @@ fn extract_from_ldjson<'a>(html: &'a Document) -> Option<String> {
         ldjson = ldj.text();
     }
 
-    let mut decoded_ldjson = Json::from_str("{}").unwrap();
+    let mut _decoded_ldjson = Json::from_str("{}").unwrap();
 
     match Json::from_str(ldjson.as_str()) {
-        Ok(v) => decoded_ldjson = v,
+        Ok(v) => _decoded_ldjson = v,
         _ => return None,
     }
 
-    if let Some(date_published) = decoded_ldjson.search("datePublished") {
+    if let Some(date_published) = _decoded_ldjson.search("datePublished") {
         if let Some(date) = date_published.as_string() {
             json_date = Some(date.to_string())
         }
-    } else if let Some(date_created) = decoded_ldjson.search("dateCreated") {
+    } else if let Some(date_created) = _decoded_ldjson.search("dateCreated") {
         if let Some(date) = date_created.as_string() {
             json_date = Some(date.to_string())
         }
@@ -190,7 +190,7 @@ fn extract_from_html_tag<'a>(html: &'a Document) -> Option<String> {
 // Try to extract the date by using each function one by one
 pub fn extract_article_published_date(link: &str, html: Option<String>) -> Result<NaiveDate> {
     let mut body: String = String::new();
-    let mut parsed_body: Option<Document> = None;
+    let mut _parsed_body: Option<Document> = None;
 
     if let Some(v) = extract_from_url(link) {
         return parse_date(v.as_str())
@@ -200,21 +200,21 @@ pub fn extract_article_published_date(link: &str, html: Option<String>) -> Resul
         if let Ok(mut response) = reqwest::get(link) {
             response.read_to_string(&mut body).unwrap();
             let doc = Document::from(body.as_str());
-            parsed_body = Some(doc);
+            _parsed_body = Some(doc);
         } else {
             return Err("Couldn't open the link".into())
         }
     } else {
-        parsed_body = Some(Document::from(html.unwrap().as_str()))
+        _parsed_body = Some(Document::from(html.unwrap().as_str()))
     }
 
     if let Some(v) = extract_from_url(link) {
         return parse_date(v.as_str())
-    } else if let Some(v) = extract_from_ldjson(parsed_body.as_ref().unwrap()) {
+    } else if let Some(v) = extract_from_ldjson(_parsed_body.as_ref().unwrap()) {
         return parse_date(v.as_str())
-    } else if let Some(v) = extract_from_meta(parsed_body.as_ref().unwrap()) {
+    } else if let Some(v) = extract_from_meta(_parsed_body.as_ref().unwrap()) {
         return parse_date(v.as_str())
-    } else if let Some(v) = extract_from_html_tag(parsed_body.as_ref().unwrap()) {
+    } else if let Some(v) = extract_from_html_tag(_parsed_body.as_ref().unwrap()) {
         return parse_date(v.as_str())
     } else {
         return Err("Couldn't find the date to parse".into())
