@@ -7,4 +7,4 @@ extern crate select;
 extern crate rustc_serialize;
 #[macro_use] extern crate error_chain;
 pub mod extract_date;
-pub mod errors;
+mod errors;
