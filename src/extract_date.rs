@@ -253,6 +253,32 @@ fn extract_from_html_tag<'a>(html: &'a Document) -> Option<String> {
 }
 
 // Try to extract the date by using each function one by one
+/// This function attempts to extract the article date by using several different methods in a row.
+/// The following methods are used: extracting the date from url, JSON-LD, meta tags, additional html tags.
+///
+/// Supported date formats:
+///
+///
+///"%A, %B %e, %Y"
+///
+///"%Y-%m-%dT%H:%M:%S%:z"
+///
+///"/%Y/%m/%d/"
+///
+///"/%Y/%d/%m/"
+///
+///"%Y-%m-%d"
+///
+///"%B %e, %Y"
+///
+///"%Y-%m-%d %H:%M:%S"
+///
+///"%Y-%m-%dT%H:%M:%SZ"
+///
+///"%B %k, %Y, %H:%M %p"
+///
+///"%Y-%m-%d %H:%M:%S.000000"
+///
 pub fn extract_article_published_date(link: &str, html: Option<String>) -> Result<NaiveDate> {
     let mut body: String = String::new();
     let mut _parsed_body: Option<Document> = None;
