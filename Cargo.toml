@@ -2,6 +2,17 @@
 name = "article-date-extractor"
 version = "0.1.0"
 authors = ["Alexey Zabelin <zabelin.alex@gmail.com>"]
+description = "A library for extracting the publication date from an article or a blog post."
+documentation = "https://docs.rs/article-date-extractor"
+homepage = "https://github.com/alexeyzab/article-date-extractor"
+repository = "https://github.com/alexeyzab/article-date-extractor"
+readme = "README.md"
+keywords = ["extract", "date"]
+categories = ["date-and-time"]
+license = "BSD-3-Clause"
+
+[badges]
+travis-ci = { repository = "alexeyzab/article-date-extractor", branch = "master" }
 
 [dependencies]
 regex = "0.2"
