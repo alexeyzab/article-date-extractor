@@ -1,6 +1,7 @@
 # article-date-extractor
 
 [![Build Status](https://travis-ci.org/alexeyzab/article-date-extractor.svg?branch=master)](https://travis-ci.org/alexeyzab/article-date-extractor)
+[![Current Version](https://meritbadge.herokuapp.com/article-date-extractor)](https://crates.io/crates/article-date-extractor)
 
 [Documentation](https://docs.rs/article-date-extractor)
 
