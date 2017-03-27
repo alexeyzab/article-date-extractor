@@ -12,7 +12,7 @@ Please consult the [documentation](https://docs.rs/article-date-extractor) for i
 
 ## Contributing
 
-1. Fork it ( https://github.com/shepmaster/sxd-document/fork )
+1. Fork it ( https://github.com/alexeyzab/article-date-extractor/fork )
 2. Create your feature branch (`git checkout -b my-new-feature`)
 3. Add a failing test.
 4. Add code to pass the test.
