@@ -1,6 +1,6 @@
 [package]
 name = "article-date-extractor"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Alexey Zabelin <zabelin.alex@gmail.com>"]
 description = "A library for extracting the publication date from an article or a blog post."
 documentation = "https://docs.rs/article-date-extractor"
