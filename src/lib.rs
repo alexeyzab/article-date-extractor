@@ -47,7 +47,7 @@ extern crate regex;
 extern crate lazy_static;
 extern crate chrono;
 extern crate select;
-extern crate rustc_serialize;
+extern crate serde_json;
 #[macro_use]
 extern crate error_chain;
 pub mod extract_date;

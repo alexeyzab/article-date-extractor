@@ -2,7 +2,8 @@ use regex::Regex;
 use chrono::NaiveDate;
 use select::document::Document;
 use select::predicate::{Name, Attr};
-use rustc_serialize::json::Json;
+use serde_json;
+use serde_json::Value;
 use errors::*;
 
 // Some formats borrowed from https://github.com/amir/article-date-extractor
@@ -39,20 +40,20 @@ fn extract_from_ldjson<'a>(html: &'a Document) -> Option<String> {
     html.find(Attr("type", "application/ld+json"))
         .next()
         .map(|ldj| ldj.text())
-        .and_then(|ldjson| Json::from_str(&ldjson).ok())
-        .and_then(|decoded_ldjson| {
+        .and_then(|ldjson| serde_json::from_str(&ldjson).ok())
+        .and_then(|decoded_ldjson: Value| {
             let published = decoded_ldjson
-                .search("datePublished")
-                .and_then(|date| date.as_string())
+                .get("datePublished")
+                .and_then(|date| date.as_str())
                 .map(|date| date.to_string());
 
             let created = decoded_ldjson
-                .search("dateCreated")
-                .and_then(|date| date.as_string())
+                .get("dateCreated")
+                .and_then(|date| date.as_str())
                 .map(|date| date.to_string());
 
             published.or(created)
-        })
+        })        
 }
 
 fn meta_name_denotes_date(meta_name: &str) -> bool {
